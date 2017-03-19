@@ -5,7 +5,6 @@
 #include <regex>
 #include <boost/foreach.hpp>
 #include <boost/program_options.hpp>
-#include <Windows.h>
 
 using namespace boost::program_options;
 using namespace std;
