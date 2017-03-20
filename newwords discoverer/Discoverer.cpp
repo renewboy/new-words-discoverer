@@ -11,7 +11,7 @@ using namespace new_words_discover;
 
 void Discoverer::process()
 {
-	std::cout << "proccessing file...\n";
+	std::wcout << L"proccessing file " << filename_ + L"...\n";
 	if (parse_file() < 0)
 	{
 		return;
@@ -229,10 +229,11 @@ void Discoverer::print()
 		std::wcerr << L"Failed to open " + out_file + L"!" << std::endl;
 		return;
 	}
-	output << L"total: " << sorted.size() << std::endl;
+	output << L"Total words: " << sorted.size() << std::endl;
 	for (const auto& s : sorted)
 	{
 		output << s.first << L" " << std::get<frequency_t>(s.second) << std::endl;
 	}
+	std::wcout << L"The results are stored in " + out_file << std::endl;
 }
 
