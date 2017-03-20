@@ -40,7 +40,7 @@ int Discoverer::parse_file()
 		return -1;
 	}
 	std::wstring paragraph;
-	// Warning C4129 Unrecognized character escape sequence.
+// Warning C4129 Unrecognized character escape sequence.
 #pragma warning(disable:4129) 
 	std::wregex re(L"\W+|[a-zA-Z0-9]+|\s+|\n+");
 #pragma warning(default:4129)
@@ -49,10 +49,10 @@ int Discoverer::parse_file()
 	{
 		std::vector<std::wstring> para_vec;
 
-		// Warning	C4996 'std::copy::_Unchecked_iterators::_Deprecate': 
-		// Call to 'std::copy' with parameters that may be unsafe.
+// Warning	C4996 'std::copy::_Unchecked_iterators::_Deprecate': 
+// Call to 'std::copy' with parameters that may be unsafe.
 #pragma warning(disable:4996) 
-	// Split by any chinese punctuation.
+	    // Split by any chinese punctuation.
 		boost::algorithm::split(para_vec, paragraph, boost::is_any_of(L"£¬¡££¿¡¶¡·£¡¡¢£¨£©¡­¡­£»£º¡°¡±¡®¡¯"));
 #pragma warning(default:4996) 
 		for (auto& segment : para_vec)
