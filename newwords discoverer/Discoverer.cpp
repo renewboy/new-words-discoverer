@@ -41,17 +41,17 @@ int Discoverer::parse_file()
 		return -1;
 	}
 	std::wstring paragraph;
-#pragma warning(disable:4129)
-	std::wregex re(L"\W+|[a-zA-Z0-9]+|\s+|\n+"); // Warning	C4129: Unrecognized character escape sequence.
+#pragma warning(disable:4129) // Warning C4129: Unrecognized character escape sequence.
+	std::wregex re(L"\W+|[a-zA-Z0-9]+|\s+|\n+"); 
 #pragma warning(default:4129)
 	std::cout << "calculating word frequency...\n";
 	while (std::getline(corpus, paragraph))
 	{
 		std::vector<std::wstring> para_vec;
-		boost::algorithm::split(para_vec, paragraph, boost::is_any_of(L"£¬¡££¿¡¶¡·£¡¡¢£¨£©¡­¡­£»£º¡°¡±¡®¡¯"));
+		boost::algorithm::split(para_vec, paragraph, boost::is_any_of(L"£¬¡££¿¡¶¡·£¡¡¢£¨£©¡­¡­£»£º¡°¡±¡®¡¯")); // Split by any chinese punctuation.
 		for (auto& segment : para_vec)
 		{
-			std::wsregex_token_iterator it(segment.begin(), segment.end(), re, -1);
+			std::wsregex_token_iterator it(segment.begin(), segment.end(), re, -1);  
 			std::wsregex_token_iterator end_it;
 			while (it != end_it)
 			{
@@ -75,6 +75,8 @@ int Discoverer::parse_file()
 void Discoverer::parse_sentence(const std::wstring & sentence, size_t word_len)
 {
 	size_t i = word_len;
+
+	// Loop for the sentence to get all potential words.
 	for (size_t j = 0; j + i < sentence.size(); j++)
 	{
 		auto word = sentence.substr(j, i);
@@ -83,11 +85,13 @@ void Discoverer::parse_sentence(const std::wstring & sentence, size_t word_len)
 		wchar_t right_adja = 0;
 		if (j > 0)
 		{
+			// get the set of left adjacent Chinese character.
 			left_adja = sentence[j - 1];
 			std::get<1>(words_[word])[left_adja]++;
 		}
 		if (j + i < sentence.size())
 		{
+			// get the set of right adjacent Chinese character. 
 			right_adja = sentence[j + i];
 			std::get<2>(words_[word])[right_adja]++;
 		}
@@ -209,12 +213,12 @@ void Discoverer::remove_words_by_degree_of_freedom()
 void Discoverer::print()
 {
 	std::vector<std::pair<std::wstring, word_t>> sorted(words_.begin(), words_.end());
-
 	std::sort(sorted.begin(), sorted.end(), [](auto& x, auto& y)
 	{
 		return std::get<frequency_t>(x.second) < std::get<frequency_t>(y.second);
 	});
 
+	// Generating output filename by input filename, remove suffix if any. 
 	auto dot = filename_.find_last_of(L'.');
 	std::wstring out_file;	
 	out_file = (dot != std::wstring::npos ? filename_.substr(0, dot) : filename_);	

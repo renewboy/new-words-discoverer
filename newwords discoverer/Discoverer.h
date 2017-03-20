@@ -6,6 +6,7 @@
 
 namespace new_words_discover {
 
+// The thresholds for the algorithm
 struct Thresholds
 {
 	size_t freq_thr;
@@ -14,7 +15,10 @@ struct Thresholds
 	size_t max_word_len;
 };
 
+// The set of left adjacent Chinese characters. <key, frequency>
 using left_adjacent_t = std::unordered_map<wchar_t, size_t>;
+
+// The set of right adjacent Chinese characters. <key, frequency>
 using right_adjacent_t = std::unordered_map<wchar_t, size_t>;
 using frequency_t = size_t;
 using firmness_t = double;
