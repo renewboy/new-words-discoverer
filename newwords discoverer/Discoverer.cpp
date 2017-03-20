@@ -52,8 +52,8 @@ int Discoverer::parse_file()
 // Warning	C4996 'std::copy::_Unchecked_iterators::_Deprecate': 
 // Call to 'std::copy' with parameters that may be unsafe.
 #pragma warning(disable:4996) 
-	    // Split by any chinese punctuation.
-		boost::algorithm::split(para_vec, paragraph, boost::is_any_of(L"£¬¡££¿¡¶¡·£¡¡¢£¨£©¡­¡­£»£º¡°¡±¡®¡¯"));
+		// Split by any chinese punctuation.
+		boost::algorithm::split(para_vec, std::move(paragraph), boost::is_any_of(L"£¬¡££¿¡¶¡·£¡¡¢£¨£©¡­¡­£»£º¡°¡±¡®¡¯"));
 #pragma warning(default:4996) 
 		for (auto& segment : para_vec)
 		{
@@ -71,7 +71,6 @@ int Discoverer::parse_file()
 				}
 			}
 		}
-		paragraph.clear();
 
 	}
 	std::cout << "done.\n";
