@@ -21,7 +21,7 @@ void Discoverer::process()
 	std::cout << "calculating firmness...\n";
 	remove_words_by_firmness();
 	std::cout << "done.\n";
-	
+
 	remove_words_by_freq();
 	remove_words_single();
 
@@ -42,16 +42,16 @@ int Discoverer::parse_file()
 	}
 	std::wstring paragraph;
 #pragma warning(disable:4129)
-	std::wregex re(L"\W+|[a-zA-Z0-9]+|\s+|\n+");
+	std::wregex re(L"\W+|[a-zA-Z0-9]+|\s+|\n+"); // Warning	C4129: Unrecognized character escape sequence.
 #pragma warning(default:4129)
 	std::cout << "calculating word frequency...\n";
 	while (std::getline(corpus, paragraph))
 	{
 		std::vector<std::wstring> para_vec;
 		boost::algorithm::split(para_vec, paragraph, boost::is_any_of(L"£¬¡££¿¡¶¡·£¡¡¢£¨£©¡­¡­£»£º¡°¡±¡®¡¯"));
-		for (auto& para : para_vec)
+		for (auto& segment : para_vec)
 		{
-			std::wsregex_token_iterator it(para.begin(), para.end(), re, -1);
+			std::wsregex_token_iterator it(segment.begin(), segment.end(), re, -1);
 			std::wsregex_token_iterator end_it;
 			while (it != end_it)
 			{
@@ -63,10 +63,10 @@ int Discoverer::parse_file()
 						parse_sentence(sentence, i);
 					}
 				}
-			}		
+			}
 		}
 		paragraph.clear();
-		
+
 	}
 	std::cout << "done.\n";
 	return 0;
@@ -75,7 +75,7 @@ int Discoverer::parse_file()
 void Discoverer::parse_sentence(const std::wstring & sentence, size_t word_len)
 {
 	size_t i = word_len;
-	for (size_t j = 0; j + i < sentence.size() ; j++)
+	for (size_t j = 0; j + i < sentence.size(); j++)
 	{
 		auto word = sentence.substr(j, i);
 
@@ -84,74 +84,31 @@ void Discoverer::parse_sentence(const std::wstring & sentence, size_t word_len)
 		if (j > 0)
 		{
 			left_adja = sentence[j - 1];
+			std::get<1>(words_[word])[left_adja]++;
 		}
 		if (j + i < sentence.size())
 		{
 			right_adja = sentence[j + i];
+			std::get<2>(words_[word])[right_adja]++;
 		}
-		auto ret = words_.find(word);
-
-		if (ret == words_.end())
-		{
-			left_adjacent_t lmap;
-			right_adjacent_t rmap;
-			if (left_adja != 0)
-			{
-				lmap.emplace(left_adja, 1);
-			}
-			if (right_adja != 0)
-			{
-				rmap.emplace(right_adja, 1);
-			}
-			word_t tmp{ 1, lmap, rmap };
-			words_.emplace(std::move(word), std::move(tmp));
-			tot_frequency++;
-		}
-		else
-		{
-			std::get<frequency_t>(ret->second)++;
-			tot_frequency++;
-			if (left_adja != 0)
-			{
-				auto& left = std::get<1>(ret->second);
-				insert_adjacents(left, left_adja);
-			}
-			if (right_adja != 0)
-			{
-				auto& right = std::get<2>(ret->second);
-				insert_adjacents(right, left_adja);
-			}
-		}
-
-	}
-}
-
-void Discoverer::insert_adjacents(std::unordered_map<wchar_t, frequency_t>& dest, wchar_t data)
-{
-	if (dest.find(data) == dest.end())
-	{
-		dest.emplace(data, 1);
-	}
-	else
-	{
-		dest[data]++;
+		std::get<frequency_t>(words_[word])++;
+		tot_frequency_++;
 	}
 }
 
 void Discoverer::remove_words_by_firmness()
 {
-	std::unordered_map<std::wstring, double> firmness;
-
-	for (const auto& word : words_)
+	for (auto& word : words_)
 	{
 		if (word.first.size() > 1)
 		{
-			firmness.emplace(word.first, calculate_firmness(word));
-		}	
+			calculate_firmness(word);
+		}
 	}
 	for (auto it = words_.begin(); it != words_.end();)
 	{
-		if (words_.size() > 1 && firmness[it->first] < thresholds_.firmness_thr)
+		if (words_.size() > 1 &&
+			std::get<firmness_t>(it->second) < thresholds_.firmness_thr)
 		{
 			it = words_.erase(it);
 		}
@@ -162,7 +119,7 @@ void Discoverer::remove_words_by_firmness()
 	}
 }
 
-double Discoverer::calculate_firmness(const std::pair<std::wstring, word_t>& word)
+void Discoverer::calculate_firmness(std::pair<const std::wstring, word_t>& word)
 {
 	size_t p_word = std::get<frequency_t>(word.second);
 	double min_firmness = 0xFFFFFFFF;
@@ -170,13 +127,13 @@ double Discoverer::calculate_firmness(const std::pair<std::wstring, word_t>& wor
 	{
 		const auto& left_part = words_[word.first.substr(0, i + 1)];
 		const auto& right_part = words_[word.first.substr(i + 1, word.first.size() - i - 1)];
-		auto ans = static_cast<double>(p_word) * tot_frequency / (std::get<frequency_t>(left_part) * std::get<frequency_t>(right_part));
+		auto ans = static_cast<double>(p_word) * tot_frequency_ / (std::get<frequency_t>(left_part) * std::get<frequency_t>(right_part));
 		if (ans < min_firmness)
 		{
 			min_firmness = ans;
 		}
 	}
-	return min_firmness;
+	std::get<firmness_t>(word.second) = min_firmness;
 }
 
 double Discoverer::calculate_degree_of_freedom(const std::pair<std::wstring, word_t>& word)
@@ -243,7 +200,7 @@ void Discoverer::remove_words_by_degree_of_freedom()
 			it = words_.erase(it);
 		}
 		else
-		{			
+		{
 			it++;
 		}
 	}
@@ -251,14 +208,17 @@ void Discoverer::remove_words_by_degree_of_freedom()
 
 void Discoverer::print()
 {
-	std::vector<std::pair<std::wstring, word_t>> sorted;
-	sorted.assign(words_.begin(), words_.end());
-	
+	std::vector<std::pair<std::wstring, word_t>> sorted(words_.begin(), words_.end());
+
 	std::sort(sorted.begin(), sorted.end(), [](auto& x, auto& y)
 	{
 		return std::get<frequency_t>(x.second) < std::get<frequency_t>(y.second);
 	});
-	std::wstring out_file = L"out.txt";
+
+	auto dot = filename_.find_last_of(L'.');
+	std::wstring out_file;	
+	out_file = (dot != std::wstring::npos ? filename_.substr(0, dot) : filename_);	
+	out_file += L"_out.txt";
 	std::wofstream output(out_file);
 	if (!output.is_open())
 	{
@@ -268,7 +228,6 @@ void Discoverer::print()
 	output << L"total: " << sorted.size() << std::endl;
 	for (const auto& s : sorted)
 	{
-		
 		output << s.first << L" " << std::get<frequency_t>(s.second) << std::endl;
 	}
 }
