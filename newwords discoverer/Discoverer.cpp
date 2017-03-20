@@ -7,7 +7,7 @@
 #include <vector>
 #include <boost/algorithm/string.hpp>     
 
-using namespace new_words_discover;
+namespace new_words_discover {
 
 void Discoverer::process()
 {
@@ -21,7 +21,6 @@ void Discoverer::process()
 	std::cout << "calculating firmness...\n";
 	remove_words_by_firmness();
 	std::cout << "done.\n";
-
 	remove_words_by_freq();
 	remove_words_single();
 
@@ -41,17 +40,24 @@ int Discoverer::parse_file()
 		return -1;
 	}
 	std::wstring paragraph;
-#pragma warning(disable:4129) // Warning C4129: Unrecognized character escape sequence.
-	std::wregex re(L"\W+|[a-zA-Z0-9]+|\s+|\n+"); 
+	// Warning C4129 Unrecognized character escape sequence.
+#pragma warning(disable:4129) 
+	std::wregex re(L"\W+|[a-zA-Z0-9]+|\s+|\n+");
 #pragma warning(default:4129)
 	std::cout << "calculating word frequency...\n";
 	while (std::getline(corpus, paragraph))
 	{
 		std::vector<std::wstring> para_vec;
-		boost::algorithm::split(para_vec, paragraph, boost::is_any_of(L"£¬¡££¿¡¶¡·£¡¡¢£¨£©¡­¡­£»£º¡°¡±¡®¡¯")); // Split by any chinese punctuation.
+
+		// Warning	C4996 'std::copy::_Unchecked_iterators::_Deprecate': 
+		// Call to 'std::copy' with parameters that may be unsafe.
+#pragma warning(disable:4996) 
+	// Split by any chinese punctuation.
+		boost::algorithm::split(para_vec, paragraph, boost::is_any_of(L"£¬¡££¿¡¶¡·£¡¡¢£¨£©¡­¡­£»£º¡°¡±¡®¡¯"));
+#pragma warning(default:4996) 
 		for (auto& segment : para_vec)
 		{
-			std::wsregex_token_iterator it(segment.begin(), segment.end(), re, -1);  
+			std::wsregex_token_iterator it(segment.begin(), segment.end(), re, -1);
 			std::wsregex_token_iterator end_it;
 			while (it != end_it)
 			{
@@ -220,8 +226,8 @@ void Discoverer::print()
 
 	// Generating output filename by input filename, remove suffix if any. 
 	auto dot = filename_.find_last_of(L'.');
-	std::wstring out_file;	
-	out_file = (dot != std::wstring::npos ? filename_.substr(0, dot) : filename_);	
+	std::wstring out_file;
+	out_file = (dot != std::wstring::npos ? filename_.substr(0, dot) : filename_);
 	out_file += L"_out.txt";
 	std::wofstream output(out_file);
 	if (!output.is_open())
@@ -236,4 +242,4 @@ void Discoverer::print()
 	}
 	std::wcout << L"The results are stored in " + out_file << std::endl;
 }
-
+}
