@@ -2,7 +2,6 @@
 #include <iostream>
 #include <fstream>
 #include <locale>
-#include <regex>
 #include <boost/program_options.hpp>
 
 using namespace boost::program_options;

@@ -54,7 +54,6 @@ int Discoverer::parse_file()
 #pragma warning(disable:4996) 
 		// Split by any chinese punctuation. Note: Don't need to clear para_vec manually.
 		boost::algorithm::split(para_vec, paragraph, boost::is_any_of(L"£¬¡££¿¡¶¡·£¡¡¢£¨£©¡­¡­£»£º¡°¡±¡®¡¯"));
-		paragraph.clear();
 #pragma warning(default:4996) 
 		for (auto& segment : para_vec)
 		{
