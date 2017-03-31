@@ -27,7 +27,7 @@ using word_t = std::tuple<frequency_t, left_adjacent_t, right_adjacent_t, firmne
 class Discoverer
 {
 public:
-	Discoverer(std::wstring filename,Thresholds thds)
+	Discoverer(std::string filename,Thresholds thds)
 		:filename_(filename), thresholds_(thds){}
 	void process();
 private:
@@ -37,12 +37,11 @@ private:
 	void calculate_firmness(std::pair<const std::wstring, word_t>& word);
 	double calculate_degree_of_freedom(const std::pair<std::wstring, word_t>& word);
 	double entropy(const std::unordered_map<wchar_t, frequency_t>& adjacents);
-	void remove_words_by_freq();
-	void remove_words_single(); 
+	void remove_words_by_freq_and_word_len();
 	void remove_words_by_degree_of_freedom();
 	void print();
 	std::unordered_map <std::wstring, word_t> words_;
-	std::wstring filename_;
+	std::string filename_;
 	Thresholds thresholds_; 
 	size_t tot_frequency_ = 0;
 };

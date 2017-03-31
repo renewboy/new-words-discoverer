@@ -11,7 +11,7 @@ namespace new_words_discover {
 
 void Discoverer::process()
 {
-	std::wcout << L"proccessing file " << filename_ + L"...\n";
+	std::cout << "proccessing file " << filename_ + "...\n";
 	if (parse_file() < 0)
 	{
 		return;
@@ -21,8 +21,7 @@ void Discoverer::process()
 	std::cout << "calculating firmness...\n";
 	remove_words_by_firmness();
 	std::cout << "done.\n";
-	remove_words_by_freq();
-	remove_words_single();
+	remove_words_by_freq_and_word_len();
 
 	std::cout << "calculating degree of freedom...\n";
 	remove_words_by_degree_of_freedom();
@@ -36,7 +35,7 @@ int Discoverer::parse_file()
 	std::wifstream corpus(filename_);
 	if (!corpus.is_open())
 	{
-		std::wcerr << L"Failed to open " + filename_ + L"!" << std::endl;
+		std::cerr << "Failed to open " + filename_ + "!" << std::endl;
 		return -1;
 	}
 	std::wstring paragraph;
@@ -49,7 +48,7 @@ int Discoverer::parse_file()
 	{
 		std::vector<std::wstring> para_vec;
 
-// Warning	C4996 'std::copy::_Unchecked_iterators::_Deprecate': 
+// Warning C4996 'std::copy::_Unchecked_iterators::_Deprecate': 
 // Call to 'std::copy' with parameters that may be unsafe.
 #pragma warning(disable:4996) 
 		// Split by any chinese punctuation. Note: Don't need to clear para_vec manually.
@@ -167,11 +166,11 @@ double Discoverer::entropy(const std::unordered_map<wchar_t, frequency_t>& adjac
 	return ret;
 }
 
-void Discoverer::remove_words_by_freq()
+void Discoverer::remove_words_by_freq_and_word_len()
 {
 	for (auto it = words_.begin(); it != words_.end();)
 	{
-		if (std::get<frequency_t>(it->second) < thresholds_.freq_thr)
+		if (it->first.size() < 2 || std::get<frequency_t>(it->second) < thresholds_.freq_thr)
 		{
 			it = words_.erase(it);
 		}
@@ -180,23 +179,6 @@ void Discoverer::remove_words_by_freq()
 			it++;
 		}
 	}
-}
-
-
-void Discoverer::remove_words_single()
-{
-	for (auto it = words_.begin(); it != words_.end();)
-	{
-		if (it->first.size() < 2)
-		{
-			it = words_.erase(it);
-		}
-		else
-		{
-			it++;
-		}
-	}
-
 }
 
 void Discoverer::remove_words_by_degree_of_freedom()
@@ -225,13 +207,13 @@ void Discoverer::print()
 
 	// Generating output filename by input filename, remove suffix if any. 
 	auto dot = filename_.find_last_of(L'.');
-	std::wstring out_file;
+	std::string out_file;
 	out_file = (dot != std::wstring::npos ? filename_.substr(0, dot) : filename_);
-	out_file += L"_out.txt";
+	out_file += "_out.txt";
 	std::wofstream output(out_file);
 	if (!output.is_open())
 	{
-		std::wcerr << L"Failed to open " + out_file + L"!" << std::endl;
+		std::cerr << "Failed to open " + out_file + "!" << std::endl;
 		return;
 	}
 	output << L"Total words: " << sorted.size() << std::endl;
@@ -239,6 +221,6 @@ void Discoverer::print()
 	{
 		output << s.first << L" " << std::get<frequency_t>(s.second) << std::endl;
 	}
-	std::wcout << L"The results are stored in " + out_file << std::endl;
+	std::cout << "The results are stored in " + out_file << std::endl;
 }
 }

@@ -2,10 +2,12 @@
 #include <iostream>
 #include <fstream>
 #include <locale>
+#include <chrono>
 #include <boost/program_options.hpp>
 
 using namespace boost::program_options;
-using namespace std;
+using std::cout;
+using std::endl;
 
 void parse_vm(const options_description &opts, const variables_map &vm)
 {
@@ -17,19 +19,19 @@ void parse_vm(const options_description &opts, const variables_map &vm)
 
 int main(int argc, char* argv[]) 
 {
-	locale::global(std::locale(""));
+	std::locale::global(std::locale(""));
 	options_description opts("Usage");
-	new_words_discover::Thresholds thds;
-	wstring filename;
+	new_words_discover::Thresholds thrs;
+	std::string filename;
 	try
 	{		
 		opts.add_options()
 			("help,h", "produce help message")
-			("file,f", wvalue<wstring>(&filename)->required(), "the file to process, required")
-			("freq", value<size_t>(&(thds.freq_thr))->default_value(3), "frequcency")
-			("firm", value<double>(&(thds.firmness_thr))->default_value(380.0), "frimness")
-			("free", value<double>(&(thds.free_thr))->default_value(1.60), "degree of freedom")
-			("wordlen,l", value<size_t>(&(thds.max_word_len))->default_value(5), "maximum word length");
+			("file,f", value<std::string>(&filename)->required(), "the file to process, required")
+			("freq", value<size_t>(&(thrs.freq_thr))->default_value(3), "frequcency")
+			("firm", value<double>(&(thrs.firmness_thr))->default_value(380.0), "frimness")
+			("free", value<double>(&(thrs.free_thr))->default_value(1.60), "degree of freedom")
+			("wordlen,l", value<size_t>(&(thrs.max_word_len))->default_value(5), "maximum word length");
 		variables_map vm;
 		store(parse_command_line(argc, argv, opts), vm);
 		notify(vm);
@@ -37,17 +39,21 @@ int main(int argc, char* argv[])
 	}
 	catch (...)
 	{
-		cout << "invaild option: ";
+		cout << "invaild option(s): ";
 		for (int i = 1; i < argc; i++)
 		{
-			cout << argv[i] << ends;
+			cout << argv[i] << std::ends;
 		}	
 		cout << endl << opts << endl;
 		exit(1);
 	}
-
-	new_words_discover::Discoverer d(filename, thds);
+	auto start = std::chrono::steady_clock::now();
+	new_words_discover::Discoverer d(filename, thrs);
 	d.process();
-
+	auto end = std::chrono::steady_clock::now();
+	using dd = std::chrono::duration<double>;
+	cout << "Total time elapsed :" 
+		<< std::chrono::duration_cast<dd>(end - start).count() 
+		<< " Seconds.\n";
 	return 0;
 }
