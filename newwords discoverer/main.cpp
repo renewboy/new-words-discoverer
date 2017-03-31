@@ -29,9 +29,9 @@ int main(int argc, char* argv[])
 			("help,h", "produce help message")
 			("file,f", value<std::string>(&filename)->required(), "the file to process, required")
 			("freq", value<size_t>(&(thrs.freq_thr))->default_value(3), "frequcency")
-			("firm", value<double>(&(thrs.firmness_thr))->default_value(380.0), "frimness")
-			("free", value<double>(&(thrs.free_thr))->default_value(1.60), "degree of freedom")
-			("wordlen,l", value<size_t>(&(thrs.max_word_len))->default_value(5), "maximum word length");
+			("firm", value<double>(&(thrs.firmness_thr))->default_value(350.0), "frimness")
+			("free", value<double>(&(thrs.free_thr))->default_value(2.0), "degree of freedom")
+			("wordlen,l", value<size_t>(&(thrs.max_word_len))->default_value(4), "maximum word length");
 		variables_map vm;
 		store(parse_command_line(argc, argv, opts), vm);
 		notify(vm);
@@ -54,6 +54,6 @@ int main(int argc, char* argv[])
 	using dd = std::chrono::duration<double>;
 	cout << "Total time elapsed :" 
 		<< std::chrono::duration_cast<dd>(end - start).count() 
-		<< " Seconds.\n";
+		<< " seconds.\n";
 	return 0;
 }

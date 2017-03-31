@@ -39,7 +39,7 @@ int Discoverer::parse_file()
 		return -1;
 	}
 	std::wstring paragraph;
-// Warning C4129 Unrecognized character escape sequence.
+	// Warning C4129 Unrecognized character escape sequence.
 #pragma warning(disable:4129) 
 	std::wregex re(L"\W+|[a-zA-Z0-9]+|\s+|\n+");
 #pragma warning(default:4129)
@@ -48,11 +48,10 @@ int Discoverer::parse_file()
 	{
 		std::vector<std::wstring> para_vec;
 
-// Warning C4996 'std::copy::_Unchecked_iterators::_Deprecate': 
-// Call to 'std::copy' with parameters that may be unsafe.
+		// Warning C4996 'std::copy::_Unchecked_iterators::_Deprecate': 
+		// Call to 'std::copy' with parameters that may be unsafe.
 #pragma warning(disable:4996) 
-		// Split by any chinese punctuation. Note: Don't need to clear para_vec manually.
-		boost::algorithm::split(para_vec, paragraph, boost::is_any_of(L"£¬¡££¿¡¶¡·£¡¡¢£¨£©¡­¡­£»£º¡°¡±¡®¡¯"));
+		boost::algorithm::split(para_vec, paragraph, boost::is_any_of(L"¡¾¡¿£¬¡££¿¡¶¡·£¡¡¢£¨£©¡­¡­£»£º¡°¡±¡®¡¯"));
 #pragma warning(default:4996) 
 		for (auto& segment : para_vec)
 		{
@@ -61,29 +60,29 @@ int Discoverer::parse_file()
 			while (it != end_it)
 			{
 				std::wstring sentence = *it++;
-				if (sentence.size() > 0)
+				boost::trim(sentence);
+				auto sen_length = sentence.size();
+				if (sen_length > 0)
 				{
-					for (size_t i = 1; i <= thresholds_.max_word_len; i++)
+					for (size_t i = 1; i <= std::min(thresholds_.max_word_len, sen_length); i++)
 					{
 						parse_sentence(sentence, i);
-					}
+					}			
 				}
 			}
 		}
-
 	}
+
 	std::cout << "done.\n";
 	return 0;
 }
 
 void Discoverer::parse_sentence(const std::wstring & sentence, size_t word_len)
 {
-	size_t i = word_len;
-
 	// Loop for the sentence to get all potential words.
-	for (size_t j = 0; j + i < sentence.size(); j++)
+	for (size_t j = 0; j + word_len <= sentence.size(); j++)
 	{
-		auto word = sentence.substr(j, i);
+		auto word = sentence.substr(j, word_len);
 
 		wchar_t left_adja = 0;
 		wchar_t right_adja = 0;
@@ -93,10 +92,10 @@ void Discoverer::parse_sentence(const std::wstring & sentence, size_t word_len)
 			left_adja = sentence[j - 1];
 			std::get<1>(words_[word])[left_adja]++;
 		}
-		if (j + i < sentence.size())
+		if (j + word_len < sentence.size())
 		{
 			// get the set of right adjacent Chinese character. 
-			right_adja = sentence[j + i];
+			right_adja = sentence[j + word_len];
 			std::get<2>(words_[word])[right_adja]++;
 		}
 		std::get<frequency_t>(words_[word])++;
