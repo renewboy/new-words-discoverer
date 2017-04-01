@@ -5,12 +5,20 @@
 #include <algorithm>
 #include <cmath>
 #include <vector>
+#include <condition_variable>
 #include <boost/algorithm/string.hpp>     
 
+namespace
+{
+	std::condition_variable cv;
+	std::mutex mu;
+}
 namespace new_words_discover {
 
 void Discoverer::process()
 {
+	start_sentence_parser();
+	std::this_thread::sleep_for(std::chrono::milliseconds(10));
 	std::cout << "proccessing file " << filename_ + "...\n";
 	if (parse_file() < 0)
 	{
@@ -26,8 +34,35 @@ void Discoverer::process()
 	std::cout << "calculating degree of freedom...\n";
 	remove_words_by_degree_of_freedom();
 	std::cout << "done.\n";
-
 	print();
+}
+
+void Discoverer::start_sentence_parser()
+{
+	sentence_parser_ = std::thread([this]
+	{
+		while (!file_parse_done_)
+		{
+			std::unique_lock<std::mutex> lck(mu);
+			cv.wait(lck, [this]
+			{
+				return !sentence_list_.empty();
+			});
+		
+			std::wstring copy = sentence_list_.front();
+			sentence_list_.pop();
+			lck.unlock();
+			parse_sentence(copy);			
+		}
+		
+		while (!sentence_list_.empty())
+		{
+			const std::wstring& sentence = sentence_list_.front();
+			parse_sentence(sentence);
+			sentence_list_.pop();
+		}
+		
+	});
 }
 
 int Discoverer::parse_file()
@@ -39,45 +74,60 @@ int Discoverer::parse_file()
 		return -1;
 	}
 	std::wstring paragraph;
+
 	// Warning C4129 Unrecognized character escape sequence.
 #pragma warning(disable:4129) 
 	std::wregex re(L"\W+|[a-zA-Z0-9]+|\s+|\n+");
 #pragma warning(default:4129)
+
 	std::cout << "calculating word frequency...\n";
 	while (std::getline(corpus, paragraph))
-	{
+	{		
+		if (paragraph.empty())
+		{
+			continue;
+		}
 		std::vector<std::wstring> para_vec;
-
 		// Warning C4996 'std::copy::_Unchecked_iterators::_Deprecate': 
 		// Call to 'std::copy' with parameters that may be unsafe.
 #pragma warning(disable:4996) 
 		boost::algorithm::split(para_vec, paragraph, boost::is_any_of(L"¡¾¡¿£¬¡££¿¡¶¡·£¡¡¢£¨£©¡­¡­£»£º¡°¡±¡®¡¯"));
 #pragma warning(default:4996) 
+
 		for (auto& segment : para_vec)
 		{
 			std::wsregex_token_iterator it(segment.begin(), segment.end(), re, -1);
 			std::wsregex_token_iterator end_it;
 			while (it != end_it)
 			{
-				std::wstring sentence = *it++;
-				boost::trim(sentence);
-				auto sen_length = sentence.size();
-				if (sen_length > 0)
-				{
-					for (size_t i = 1; i <= std::min(thresholds_.max_word_len, sen_length); i++)
-					{
-						parse_sentence(sentence, i);
-					}			
-				}
+				std::unique_lock<std::mutex> lck(mu);
+				std::wstring&& cur_sentence=it->str();
+				it++;
+				boost::trim(cur_sentence);
+				sentence_list_.emplace(cur_sentence);
+				cv.notify_one();				
 			}
 		}
 	}
-
+	file_parse_done_ = true;
+	sentence_parser_.join();
 	std::cout << "done.\n";
 	return 0;
 }
 
-void Discoverer::parse_sentence(const std::wstring & sentence, size_t word_len)
+void Discoverer::parse_sentence(const std::wstring & sentence)
+{
+	auto sen_length = sentence.size();
+	if (sen_length > 0)
+	{
+		for (size_t word_len = 1; word_len <= std::min(thresholds_.max_word_len, sen_length); word_len++)
+		{
+			parse_word(sentence, word_len);
+		}
+	}
+}
+
+void Discoverer::parse_word(const std::wstring & sentence, size_t word_len)
 {
 	// Loop for the sentence to get all potential words.
 	for (size_t j = 0; j + word_len <= sentence.size(); j++)
@@ -205,9 +255,9 @@ void Discoverer::print()
 	});
 
 	// Generating output filename by input filename, remove suffix if any. 
-	auto dot = filename_.find_last_of(L'.');
+	auto dot = filename_.find_last_of('.');
 	std::string out_file;
-	out_file = (dot != std::wstring::npos ? filename_.substr(0, dot) : filename_);
+	out_file = (dot != std::string::npos ? filename_.substr(0, dot) : filename_);
 	out_file += "_out.txt";
 	std::wofstream output(out_file);
 	if (!output.is_open())

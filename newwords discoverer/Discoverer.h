@@ -3,6 +3,8 @@
 
 #include <string>
 #include <unordered_map>
+#include <thread>
+#include <queue>
 
 namespace new_words_discover {
 
@@ -10,9 +12,9 @@ namespace new_words_discover {
 struct Thresholds
 {
 	size_t freq_thr;
+	size_t max_word_len;	
 	double firmness_thr;
 	double free_thr;
-	size_t max_word_len;
 };
 
 // The set of left adjacent Chinese characters. <key, frequency>
@@ -31,8 +33,10 @@ public:
 		:filename_(filename), thresholds_(thds){}
 	void process();
 private:
+	void start_sentence_parser();
 	int parse_file();
-	void parse_sentence(const std::wstring& sentence, size_t word_len);
+	void parse_sentence(const std::wstring& sentence);
+	void parse_word(const std::wstring& sentence, size_t word_len);
 	void remove_words_by_firmness();
 	void calculate_firmness(std::pair<const std::wstring, word_t>& word);
 	double calculate_degree_of_freedom(const std::pair<std::wstring, word_t>& word);
@@ -40,10 +44,14 @@ private:
 	void remove_words_by_freq_and_word_len();
 	void remove_words_by_degree_of_freedom();
 	void print();
+
 	std::unordered_map <std::wstring, word_t> words_;
+	std::queue<std::wstring> sentence_list_;
+	std::thread sentence_parser_;
 	std::string filename_;
 	Thresholds thresholds_; 
-	size_t tot_frequency_ = 0;
+	size_t tot_frequency_ = 0;	
+	bool file_parse_done_ = false;
 };
 
 }
