@@ -47,13 +47,16 @@ void Discoverer::start_sentence_parser()
 			std::unique_lock<std::mutex> lck(g_mutex_sentence);
 			g_cv_sentence.wait(lck, [this]
 			{
-				return !sentence_list_.empty();
+				return !sentence_list_.empty() || file_parse_done_;
 			});
-		
-			std::wstring copy = sentence_list_.front();
-			sentence_list_.pop();
-			lck.unlock();
-			parse_sentence(copy);			
+
+			if (!sentence_list_.empty())
+			{
+				std::wstring copy = sentence_list_.front();
+				sentence_list_.pop();
+				lck.unlock();
+				parse_sentence(copy);
+			}						
 		}
 		
 		while (!sentence_list_.empty())
@@ -113,6 +116,8 @@ int Discoverer::parse_file()
 		}
 	}
 	file_parse_done_ = true;
+	// notify to avoid the infinite wait.
+	g_cv_sentence.notify_one();
 	sentence_parser_.join();
 	std::cout << "done.\n";
 	return 0;
@@ -242,9 +247,9 @@ double Discoverer::calculate_degree_of_freedom(const std::pair<std::wstring, wor
 
 double Discoverer::entropy(const std::unordered_map<wchar_t, frequency_t>& adjacents)
 {
-	int tot_freq = 0;
+	size_t tot_freq = 0;
 	double ret = 0;
-	std::for_each(adjacents.begin(), adjacents.end(), [&tot_freq](auto val)
+	std::for_each(adjacents.begin(), adjacents.end(), [&tot_freq](auto& val)
 	{
 		tot_freq += val.second;
 	});
