@@ -25,7 +25,7 @@ using right_adjacent_t = std::unordered_map<wchar_t, size_t>;
 using frequency_t = size_t;
 using firmness_t = double;
 using word_t = std::tuple<frequency_t, left_adjacent_t, right_adjacent_t, firmness_t>;
-
+using word_map_iter = std::unordered_map <std::wstring, word_t>::iterator;
 class Discoverer
 {
 public:
@@ -38,6 +38,7 @@ private:
 	void parse_sentence(const std::wstring& sentence);
 	void parse_word(const std::wstring& sentence, size_t word_len);
 	void remove_words_by_firmness();
+	void calculate_firmness(word_map_iter begin, word_map_iter end);
 	void calculate_firmness(std::pair<const std::wstring, word_t>& word);
 	double calculate_degree_of_freedom(const std::pair<std::wstring, word_t>& word);
 	double entropy(const std::unordered_map<wchar_t, frequency_t>& adjacents);
