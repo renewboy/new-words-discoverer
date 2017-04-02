@@ -101,11 +101,13 @@ int Discoverer::parse_file()
 			std::wsregex_token_iterator end_it;
 			while (it != end_it)
 			{
-				std::lock_guard<std::mutex> lck(g_mutex_sentence);
 				std::wstring&& cur_sentence=it->str();
 				it++;
 				boost::trim(cur_sentence);
-				sentence_list_.emplace(cur_sentence);
+				{
+					std::lock_guard<std::mutex> lck(g_mutex_sentence);
+					sentence_list_.emplace(cur_sentence);
+				}
 				g_cv_sentence.notify_one();
 			}
 		}
@@ -160,8 +162,8 @@ void Discoverer::remove_words_by_firmness()
 	auto dist = std::distance(words_.begin(), words_.end());
 	auto low = words_.begin();
 	auto high = words_.begin();
-	auto index = dist / 4;      // Seperate into 4 or 5 parts.
-	std::advance(high, index);
+	auto step = dist / 4;      // Seperate into 4 or 5 parts.
+	std::advance(high, step);
 	std::vector<std::future<void>> fu_vec;
 	while (std::distance(high, words_.end()) >= 0)
 	{
@@ -174,10 +176,10 @@ void Discoverer::remove_words_by_firmness()
 		{
 			break;
 		}
-		std::advance(low, index);
-		if (std::distance(high, words_.end()) >= index)
+		std::advance(low, step);
+		if (std::distance(high, words_.end()) >= step)
 		{
-			std::advance(high, index);
+			std::advance(high, step);
 		}
 		else
 		{
