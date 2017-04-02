@@ -19,7 +19,6 @@ namespace new_words_discover {
 void Discoverer::process()
 {
 	start_sentence_parser();
-	//std::this_thread::sleep_for(std::chrono::milliseconds(10));
 	std::cout << "proccessing file " << filename_ + "...\n";
 	if (parse_file() < 0)
 	{
@@ -106,12 +105,15 @@ int Discoverer::parse_file()
 			{
 				std::wstring&& cur_sentence=it->str();
 				it++;
-				boost::trim(cur_sentence);
+				if (!cur_sentence.empty())
 				{
-					std::lock_guard<std::mutex> lck(g_mutex_sentence);
-					sentence_list_.emplace(cur_sentence);
+					boost::trim(cur_sentence);
+					{
+						std::lock_guard<std::mutex> lck(g_mutex_sentence);
+						sentence_list_.emplace(cur_sentence);
+					}
+					g_cv_sentence.notify_one();
 				}
-				g_cv_sentence.notify_one();
 			}
 		}
 	}
@@ -125,13 +127,10 @@ int Discoverer::parse_file()
 
 void Discoverer::parse_sentence(const std::wstring & sentence)
 {
-	auto sen_length = sentence.size();
-	if (sen_length > 0)
+	assert(!sentence.empty());
+	for (size_t word_len = 1; word_len <= std::min(thresholds_.max_word_len, sentence.size()); word_len++)
 	{
-		for (size_t word_len = 1; word_len <= std::min(thresholds_.max_word_len, sen_length); word_len++)
-		{
-			parse_word(sentence, word_len);
-		}
+		parse_word(sentence, word_len);
 	}
 }
 
@@ -164,31 +163,37 @@ void Discoverer::parse_word(const std::wstring & sentence, size_t word_len)
 void Discoverer::remove_words_by_firmness()
 {
 	// Calculate firmness concurrently.
-	auto dist = std::distance(words_.begin(), words_.end());
+	auto total_words = words_.size();
 	auto low = words_.begin();
 	auto high = words_.begin();
-	auto step = dist / 4;      // Seperate into 4 or 5 parts.
+	auto step = total_words >= 4 ? total_words >> 2 : 1;      // Seperate into 4 or 5 parts.
 	std::advance(high, step);
+
+	// high_int is to calculate the distance between high and words.end(),
+	// avoid using std::distance for bidirectional iterators.
+	int high_int = step;   
 	std::vector<std::future<void>> fu_vec;
-	while (std::distance(high, words_.end()) >= 0)
+	while (total_words - high_int >= 0)
 	{
 		// Go!
 		fu_vec.push_back(std::async(std::launch::async, [this, low, high]
 		{
 			calculate_firmness(low, high);
 		}));
-		if (high == words_.end())
+		if (high_int == total_words)
 		{
 			break;
 		}
 		std::advance(low, step);
-		if (std::distance(high, words_.end()) >= step)
+		if (total_words - high_int >= step)
 		{
+			high_int += step;
 			std::advance(high, step);
 		}
 		else
 		{
-			std::advance(high, std::distance(high, words_.end()));
+			std::advance(high, total_words - high_int);
+			high_int += step;
 		}
 	}
 	// Waiting for the future objects.
@@ -198,8 +203,8 @@ void Discoverer::remove_words_by_firmness()
 	}
 	for (auto it = words_.begin(); it != words_.end();)
 	{
-		if (words_.size() > 1 &&
-			std::get<firmness_t>(it->second) < thresholds_.firmness_thr)
+		if (words_.size() > 1 
+			&& std::get<firmness_t>(it->second) < thresholds_.firmness_thr)
 		{
 			it = words_.erase(it);
 		}
