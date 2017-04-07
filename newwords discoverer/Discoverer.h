@@ -32,6 +32,8 @@ public:
 	Discoverer(std::string filename,Thresholds thds)
 		:filename_(filename), thresholds_(thds){}
 	void process();
+	Discoverer(const Discoverer&) = delete;
+	Discoverer& operator=(const Discoverer&) = delete;
 private:
 	void start_sentence_parser();
 	int parse_file();
