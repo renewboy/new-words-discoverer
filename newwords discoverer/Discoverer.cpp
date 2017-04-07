@@ -164,7 +164,7 @@ void Discoverer::parse_word(const std::wstring & sentence, size_t word_len)
 void Discoverer::remove_words_by_firmness()
 {
 	// Calculate firmness concurrently.
-	auto total_words = words_.size();
+	int total_words = static_cast<int>(words_.size());
 	if (total_words == 0)
 	{
 		return;
