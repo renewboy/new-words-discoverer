@@ -141,20 +141,20 @@ void Discoverer::parse_word(const std::wstring & sentence, size_t word_len)
 	for (size_t j = 0; j + word_len <= sentence.size(); ++j)
 	{
 		auto word = sentence.substr(j, word_len);
-
-		wchar_t left_adja = 0;
-		wchar_t right_adja = 0;
-		if (j > 0)
+		if (word.size() > 1)
 		{
-			// get the set of left adjacent Chinese character.
-			left_adja = sentence[j - 1];
-			++std::get<1>(words_[word])[left_adja];
-		}
-		if (j + word_len < sentence.size())
-		{
-			// get the set of right adjacent Chinese character. 
-			right_adja = sentence[j + word_len];
-			++std::get<2>(words_[word])[right_adja];
+			if (j > 0)
+			{
+				// get the set of left adjacent Chinese character.
+				const wchar_t& left_adja = sentence[j - 1];
+				++std::get<1>(words_[word])[left_adja];
+			}
+			if (j + word_len < sentence.size())
+			{
+				// get the set of right adjacent Chinese character. 
+				const wchar_t& right_adja = sentence[j + word_len];
+				++std::get<2>(words_[word])[right_adja];
+			}
 		}
 		++std::get<frequency_t>(words_[word]);
 		++tot_frequency_;

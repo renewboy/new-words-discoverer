@@ -289,3 +289,4 @@ __pycache__/
 
 # Text file
 *.txt
+*.diagsession
