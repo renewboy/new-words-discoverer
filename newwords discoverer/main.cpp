@@ -30,7 +30,7 @@ int main(int argc, char* argv[])
 			("file,f", value<std::string>(&filename)->required(), "the file to process, required")
 			("freq", value<size_t>(&(thrs.freq_thr))->default_value(3), "frequcency")
 			("firm", value<double>(&(thrs.firmness_thr))->default_value(350.0), "frimness")
-			("free", value<double>(&(thrs.free_thr))->default_value(2.0), "degree of freedom")
+			("df", value<double>(&(thrs.df_thr))->default_value(2.0), "degree of freedom")
 			("wordlen,l", value<size_t>(&(thrs.max_word_len))->default_value(4), "maximum word length");
 		variables_map vm;
 		store(parse_command_line(argc, argv, opts), vm);

@@ -26,11 +26,12 @@ using frequency_t = size_t;
 using firmness_t = double;
 using word_t = std::tuple<frequency_t, left_adjacent_t, right_adjacent_t, firmness_t>;
 using word_map_iter = std::unordered_map <std::wstring, word_t>::iterator;
+
 class Discoverer
 {
 public:
-	Discoverer(std::string filename,Thresholds thds)
-		:filename_(filename), thresholds_(thds){}
+	Discoverer(const std::string& filename, const Thresholds& thds)
+		:filename_(filename), thresholds_(thds) {}
 	void process();
 	Discoverer(const Discoverer&) = delete;
 	Discoverer& operator=(const Discoverer&) = delete;

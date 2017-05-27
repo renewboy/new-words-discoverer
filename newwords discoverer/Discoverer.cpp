@@ -121,8 +121,8 @@ int Discoverer::parse_file()
 	file_parse_done_ = true;
 	// notify to avoid the infinite wait.
 	g_cv_sentence.notify_one();
-	sentence_parser_.join();
 	std::cout << "done.\n";
+	sentence_parser_.join();
 	return 0;
 }
 
@@ -224,6 +224,7 @@ void Discoverer::calculate_firmness(std::pair<const std::wstring, word_t>& word)
 {
 	size_t p_word = std::get<frequency_t>(word.second);
 	double min_firmness = std::numeric_limits<double>::max();
+	
 	for (size_t i = 0; i < word.first.size(); ++i)
 	{
 		const auto& left_part = words_[word.first.substr(0, i + 1)];
@@ -289,8 +290,8 @@ void Discoverer::remove_words_by_degree_of_freedom()
 {
 	for (auto it = words_.begin(); it != words_.end();)
 	{
-		auto freedom = calculate_degree_of_freedom(*it);
-		if (freedom < thresholds_.free_thr)
+		auto df = calculate_degree_of_freedom(*it);
+		if (df < thresholds_.df_thr)
 		{
 			it = words_.erase(it);
 		}
