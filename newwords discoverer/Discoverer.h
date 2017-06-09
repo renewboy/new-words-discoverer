@@ -4,6 +4,7 @@
 #include <string>
 #include <unordered_map>
 #include <thread>
+#include <condition_variable>
 #include <queue>
 
 namespace new_words_discover {
@@ -14,7 +15,7 @@ struct Thresholds
 	size_t freq_thr;
 	size_t max_word_len;	
 	double firmness_thr;
-	double free_thr;
+	double df_thr;
 };
 
 // The set of left adjacent Chinese characters. <key, frequency>
@@ -54,6 +55,8 @@ private:
 	std::thread sentence_parser_;
 	std::string filename_;
 	Thresholds thresholds_; 
+	std::condition_variable cv_sentence_;
+	std::mutex mutex_sentence_;
 	size_t tot_frequency_ = 0;	
 	bool file_parse_done_ = false;
 };

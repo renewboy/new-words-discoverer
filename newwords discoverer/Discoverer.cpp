@@ -6,16 +6,10 @@
 #include <cmath>
 #include <vector>
 #include <future>
-#include <condition_variable>
+
 #include <boost/algorithm/string.hpp>     
 
 namespace new_words_discover {
-
-namespace
-{
-	std::condition_variable g_cv_sentence;
-	std::mutex g_mutex_sentence;
-}
 
 void Discoverer::process()
 {
@@ -44,8 +38,8 @@ void Discoverer::start_sentence_parser()
 	{
 		while (!file_parse_done_)
 		{
-			std::unique_lock<std::mutex> lck(g_mutex_sentence);
-			g_cv_sentence.wait(lck, [this]
+			std::unique_lock<std::mutex> lck(mutex_sentence_);
+			cv_sentence_.wait(lck, [this]
 			{
 				return !sentence_list_.empty() || file_parse_done_;
 			});
@@ -110,17 +104,17 @@ int Discoverer::parse_file()
 				{
 					boost::trim(cur_sentence);
 					{
-						std::lock_guard<std::mutex> lck(g_mutex_sentence);
+						std::lock_guard<std::mutex> lck(mutex_sentence_);
 						sentence_list_.emplace(cur_sentence);
 					}
-					g_cv_sentence.notify_one();
+					cv_sentence_.notify_one();
 				}
 			}
 		}
 	}
 	file_parse_done_ = true;
 	// notify to avoid the infinite wait.
-	g_cv_sentence.notify_one();
+	cv_sentence_.notify_one();
 	std::cout << "done.\n";
 	sentence_parser_.join();
 	return 0;
