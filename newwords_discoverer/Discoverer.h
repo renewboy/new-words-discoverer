@@ -1,4 +1,4 @@
-#ifndef __Discoverer_h__
+﻿#ifndef __Discoverer_h__
 #define __Discoverer_h__
 
 #include <string>
