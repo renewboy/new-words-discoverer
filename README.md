@@ -19,7 +19,7 @@ cd ..
 ## Example
 You can simply run the example by following steps:
 - Build the application
-- Run the example: `cd install && ./new_words_discoverer ../corpus/红楼梦.txt`
+- Run the example: `cd install && ./new_words_discoverer -f ../corpus/红楼梦.txt`
 - Check the output in `红楼梦_out.txt`
 ## Reference
 http://www.matrix67.com/blog/archives/5044
