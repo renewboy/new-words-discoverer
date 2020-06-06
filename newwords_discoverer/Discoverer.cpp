@@ -1,4 +1,6 @@
-﻿#include "Discoverer.h"
+﻿#pragma execution_character_set("utf-8")
+
+#include "Discoverer.h"
 #include <regex>
 #include <fstream>
 #include <iostream>
@@ -6,7 +8,6 @@
 #include <cmath>
 #include <vector>
 #include <future>
-
 #include <boost/algorithm/string.hpp>
 
 namespace new_words_discover
@@ -65,9 +66,11 @@ int Discoverer::parse_file()
     }
     std::wstring paragraph;
 
-    // Warning C4129 Unrecognized character escape sequence.
+#if defined(_MSC_VER)
     std::wregex re(L"\W+|[a-zA-Z0-9]+|\s+|\n+");
-
+#else
+    std::wregex re(L"\\W+|[a-zA-Z0-9]+|\\s+|\n+");
+#endif
     std::cout << "calculating word frequency...\n";
     while (std::getline(corpus, paragraph)) {
         if (paragraph.empty()) {
